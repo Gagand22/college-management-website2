@@ -70,28 +70,43 @@ db.serialize(() => {
     )`);
 
     // Seed Data (Only if users table is empty)
+        // Seed Data (Only if users table is empty)
     db.get("SELECT count(*) as count FROM users", (err, row) => {
         if (row.count === 0) {
             console.log("🌱 Seeding Initial Data...");
             const stmt = db.prepare("INSERT INTO users (username, password, role, name, course, rollNumber, email, mobile, semester, subjects) VALUES (?,?,?,?,?,?,?,?,?,?)");
             
-            // Admin
+            // --- 1. ADMIN ---
             stmt.run("admin", "admin123", "admin", "System Admin", null, null, null, null, null, null);
             
-            // Teachers (Subjects stored as JSON string)
-            stmt.run("teacher1", "teacher123", "teacher", "Mr. Anil Kumar", null, null, null, null, null, JSON.stringify(["Java Programming", "Data Structures"]));
-            stmt.run("teacher2", "teacher123", "teacher", "Ms. Sunita Singh", null, null, null, null, null, JSON.stringify(["Business Studies", "Marketing Mgmt"]));
+            // --- 2. TEACHERS (5 Teachers) ---
+            // Teacher 1: BCA Core
+            stmt.run("teacher1", "123", "teacher", "Mr. Anil Kumar", null, null, null, null, null, JSON.stringify(["Java Programming", "Data Structures"]));
+            // Teacher 2: BBA Core
+            stmt.run("teacher2", "123", "teacher", "Ms. Sunita Singh", null, null, null, null, null, JSON.stringify(["Business Studies", "Marketing Mgmt"]));
+            // Teacher 3: BCOM Core
+            stmt.run("teacher3", "123", "teacher", "Mr. Rajesh Verma", null, null, null, null, null, JSON.stringify(["Accounting", "Economics"]));
+            // Teacher 4: BCA Advanced
+            stmt.run("teacher4", "123", "teacher", "Dr. Emily Chen", null, null, null, null, null, JSON.stringify(["DBMS", "Computer Networks"]));
+            // Teacher 5: BBA Advanced
+            stmt.run("teacher5", "123", "teacher", "Prof. John Doe", null, null, null, null, null, JSON.stringify(["HR Management", "Business Law"]));
 
-            // Students
-            stmt.run("student1", "123", "student", "Rahul Sharma", "BCA", "BCA-01", "rahul@college.edu", "9876543210", 3, null);
-            stmt.run("student2", "123", "student", "Priya Singh", "BCA", "BCA-02", "priya@college.edu", "9876543211", 3, null);
-            stmt.run("student3", "123", "student", "Amit Verma", "BBA", "BBA-01", "amit@college.edu", "9876543212", 3, null);
-            stmt.run("student4", "123", "student", "Sneha Kapoor", "BBA", "BBA-02", "sneha@college.edu", "9876543213", 3, null);
-            stmt.run("student5", "123", "student", "Vijay Kumar", "BCOM", "BCOM-01", "vijay@college.edu", "9876543214", 3, null);
+            // --- 3. STUDENTS (5 Students) ---
+            // Student 1: BCA
+            stmt.run("rahul", "123", "student", "Rahul Sharma", "BCA", "BCA-01", "rahul@college.edu", "9876543210", 3, null);
+            // Student 2: BCA
+            stmt.run("priya", "123", "student", "Priya Singh", "BCA", "BCA-02", "priya@college.edu", "9876543211", 3, null);
+            // Student 3: BBA
+            stmt.run("amit", "123", "student", "Amit Verma", "BBA", "BBA-01", "amit@college.edu", "9876543212", 3, null);
+            // Student 4: BBA
+            stmt.run("sneha", "123", "student", "Sneha Kapoor", "BBA", "BBA-02", "sneha@college.edu", "9876543213", 3, null);
+            // Student 5: BCOM
+            stmt.run("vijay", "123", "student", "Vijay Kumar", "BCOM", "BCOM-01", "vijay@college.edu", "9876543214", 3, null);
             
             stmt.finalize();
+            console.log("✅ Database seeded with 1 Admin, 5 Teachers, and 5 Students.");
         }
-    });
+
 });
 
 // --- 3. HELPERS ---
