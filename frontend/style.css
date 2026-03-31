@@ -18,7 +18,7 @@ body { background-color: var(--bg-body); color: var(--text-main); height: 100vh;
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-/* --- LOGIN SCREEN (Centered) --- */
+/* --- LOGIN SCREEN --- */
 #login-screen {
     height: 100vh; width: 100vw; display: flex; justify-content: center; align-items: center;
     position: relative; overflow: hidden;
@@ -47,18 +47,18 @@ body { background-color: var(--bg-body); color: var(--text-main); height: 100vh;
 .login-card p { color: rgba(255,255,255,0.6); margin-bottom: 30px; font-size: 1.1rem; }
 
 /* Forms */
-.form-group { margin-bottom: 5px; } /* Reduced margin for tighter horizontal look */
+.form-group { margin-bottom: 5px; }
 .form-label { 
     display: block; margin-bottom: 4px; font-weight: 600; color: var(--text-main); 
     font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; 
 }
 .form-input, select, textarea {
-    width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; /* Smaller radius/padding */
+    width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px;
     font-size: 0.9rem; transition: all 0.3s; outline: none; background: #f9fafb; color: var(--text-main);
 }
 .form-input::placeholder, textarea::placeholder { color: #9ca3af; font-size: 0.85rem; }
 .form-input:focus, select:focus, textarea:focus {
-    border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-light); /* Smaller focus ring */
+    border-color: var(--primary); background: white; box-shadow: 0 0 0 3px var(--primary-light);
     transform: translateY(-1px);
 }
 #login-screen .form-input { background: rgba(0,0,0,0.2); color: white; border-color: rgba(255,255,255,0.1); }
@@ -123,19 +123,13 @@ tr:hover { background-color: #f0f9ff; }
 .badge-red { background: #fee2e2; color: #991b1b; }
 .badge-blue { background: #dbeafe; color: #1e40af; }
 
-/* --- UPDATED FORM GRID (Horizontal) --- */
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4 Columns in one row */
+    grid-template-columns: repeat(4, 1fr);
     gap: 15px;
     margin-bottom: 20px;
 }
-
-/* Responsive: If screen is too small for 4 columns, make it 2x2 */
-@media(max-width: 1024px) {
-    .form-grid { grid-template-columns: 1fr 1fr; }
-}
-/* Responsive: If very small (mobile), stack them */
+@media(max-width: 1024px) { .form-grid { grid-template-columns: 1fr 1fr; } }
 @media(max-width: 600px) {
     .form-grid { grid-template-columns: 1fr; }
     #app-screen { flex-direction: column; overflow: auto; }
