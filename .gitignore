@@ -1,0 +1,4 @@
+node_modules/
+uniportal.db
+build/
+.DS_Store
