@@ -10,7 +10,6 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-// Serve static files from the current directory (Root) AND 'frontend' folder if it exists
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'frontend')));
 
@@ -20,94 +19,95 @@ app.get('/', (req, res) => {
     const frontendPath = path.join(__dirname, 'frontend', 'index.html');
 
     if (fs.existsSync(rootPath)) {
-        console.log("✅ Serving index.html from Root Folder");
         res.sendFile(rootPath);
     } else if (fs.existsSync(frontendPath)) {
-        console.log("✅ Serving index.html from 'frontend' Folder");
         res.sendFile(frontendPath);
     } else {
-        console.error("❌ CRITICAL ERROR: index.html not found!");
-        console.log("Files in Root:", fs.readdirSync(__dirname));
-        if (fs.existsSync(path.join(__dirname, 'frontend'))) {
-            console.log("Files in Frontend:", fs.readdirSync(path.join(__dirname, 'frontend')));
-        }
-        res.status(500).send("<h1>Server Error</h1><p>Could not find index.html. Check terminal for details.</p>");
+        res.status(404).send("<h1>404 Not Found</h1><p>Could not find index.html. Ensure it is in the project root or 'frontend' folder.</p>");
     }
 });
-// ------------------------------------
 
-// --- 1. DATABASE CONNECTION (SQLite) ---
+// --- 1. DATABASE CONNECTION ---
 const db = new sqlite3.Database('./uniportal.db', (err) => {
-    if (err) console.error('❌ Error opening database', err);
-    else console.log('✅ Connected to SQLite database');
+    if (err) {
+        console.error('❌ Error opening database:', err.message);
+    } else {
+        console.log('✅ Connected to SQLite database.');
+        initDB();
+    }
 });
 
-// --- 2. CREATE TABLES & SEED DATA ---
-db.serialize(() => {
-    // Users Table
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT,
-        role TEXT,
-        name TEXT,
-        course TEXT,
-        rollNumber TEXT,
-        email TEXT,
-        mobile TEXT,
-        semester INTEGER,
-        subjects TEXT
-    )`);
+// --- 2. INITIALIZE DB & SEED DATA ---
+function initDB() {
+    db.serialize(() => {
+        // Create Users Table
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT,
+            role TEXT,
+            name TEXT,
+            course TEXT,
+            rollNumber TEXT,
+            email TEXT,
+            mobile TEXT,
+            semester INTEGER,
+            subjects TEXT
+        )`);
 
-    // Attendance Table
-    db.run(`CREATE TABLE IF NOT EXISTS attendance (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        studentId INTEGER,
-        date TEXT,
-        subject TEXT,
-        period INTEGER,
-        status TEXT
-    )`);
+        // Create Attendance Table
+        db.run(`CREATE TABLE IF NOT EXISTS attendance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            studentId INTEGER,
+            date TEXT,
+            subject TEXT,
+            period INTEGER,
+            status TEXT
+        )`);
 
-    // Seed Data (Only if users table is empty)
-        // Seed Data (Only if users table is empty)
-    db.get("SELECT count(*) as count FROM users", (err, row) => {
-        if (row.count === 0) {
-            console.log("🌱 Seeding Initial Data...");
-            const stmt = db.prepare("INSERT INTO users (username, password, role, name, course, rollNumber, email, mobile, semester, subjects) VALUES (?,?,?,?,?,?,?,?,?,?)");
-            
-            // --- 1. ADMIN ---
-            stmt.run("admin", "admin123", "admin", "System Admin", null, null, null, null, null, null);
-            
-            // --- 2. TEACHERS (5 Teachers) ---
-            // Teacher 1: BCA Core
-            stmt.run("teacher1", "123", "teacher", "Mr. Anil Kumar", null, null, null, null, null, JSON.stringify(["Java Programming", "Data Structures"]));
-            // Teacher 2: BBA Core
-            stmt.run("teacher2", "123", "teacher", "Ms. Sunita Singh", null, null, null, null, null, JSON.stringify(["Business Studies", "Marketing Mgmt"]));
-            // Teacher 3: BCOM Core
-            stmt.run("teacher3", "123", "teacher", "Mr. Rajesh Verma", null, null, null, null, null, JSON.stringify(["Accounting", "Economics"]));
-            // Teacher 4: BCA Advanced
-            stmt.run("teacher4", "123", "teacher", "Dr. Emily Chen", null, null, null, null, null, JSON.stringify(["DBMS", "Computer Networks"]));
-            // Teacher 5: BBA Advanced
-            stmt.run("teacher5", "123", "teacher", "Prof. John Doe", null, null, null, null, null, JSON.stringify(["HR Management", "Business Law"]));
+        // Seed Data using INSERT OR IGNORE (Safe to run multiple times)
+        const stmt = db.prepare("INSERT OR IGNORE INTO users (username, password, role, name, course, rollNumber, email, mobile, semester, subjects) VALUES (?,?,?,?,?,?,?,?,?,?)");
+        
+        const usersToSeed = [
+            // Admin
+            ["admin", "admin123", "admin", "System Admin", null, null, null, null, null, null],
+            // Teachers
+            ["teacher1", "123", "teacher", "Mr. Anil Kumar", null, null, null, null, null, JSON.stringify(["Java Programming", "Data Structures"])],
+            ["teacher2", "123", "teacher", "Ms. Sunita Singh", null, null, null, null, null, JSON.stringify(["Business Studies", "Marketing Mgmt"])],
+            ["teacher3", "123", "teacher", "Mr. Rajesh Verma", null, null, null, null, null, JSON.stringify(["Accounting", "Economics"])],
+            ["teacher4", "123", "teacher", "Dr. Emily Chen", null, null, null, null, null, JSON.stringify(["DBMS", "Computer Networks"])],
+            ["teacher5", "123", "teacher", "Prof. John Doe", null, null, null, null, null, JSON.stringify(["HR Management", "Business Law"])],
+            // Students
+            ["rahul", "123", "student", "Rahul Sharma", "BCA", "BCA-01", "rahul@college.edu", "9876543210", 3, null],
+            ["priya", "123", "student", "Priya Singh", "BCA", "BCA-02", "priya@college.edu", "9876543211", 3, null],
+            ["amit", "123", "student", "Amit Verma", "BBA", "BBA-01", "amit@college.edu", "9876543212", 3, null],
+            ["sneha", "123", "student", "Sneha Kapoor", "BBA", "BBA-02", "sneha@college.edu", "9876543213", 3, null],
+            ["vijay", "123", "student", "Vijay Kumar", "BCOM", "BCOM-01", "vijay@college.edu", "9876543214", 3, null]
+        ];
 
-            // --- 3. STUDENTS (5 Students) ---
-            // Student 1: BCA
-            stmt.run("rahul", "123", "student", "Rahul Sharma", "BCA", "BCA-01", "rahul@college.edu", "9876543210", 3, null);
-            // Student 2: BCA
-            stmt.run("priya", "123", "student", "Priya Singh", "BCA", "BCA-02", "priya@college.edu", "9876543211", 3, null);
-            // Student 3: BBA
-            stmt.run("amit", "123", "student", "Amit Verma", "BBA", "BBA-01", "amit@college.edu", "9876543212", 3, null);
-            // Student 4: BBA
-            stmt.run("sneha", "123", "student", "Sneha Kapoor", "BBA", "BBA-02", "sneha@college.edu", "9876543213", 3, null);
-            // Student 5: BCOM
-            stmt.run("vijay", "123", "student", "Vijay Kumar", "BCOM", "BCOM-01", "vijay@college.edu", "9876543214", 3, null);
-            
-            stmt.finalize();
-            console.log("✅ Database seeded with 1 Admin, 5 Teachers, and 5 Students.");
-        }
-
-});
+        let seededCount = 0;
+        usersToSeed.forEach(user => {
+            stmt.run(user, (err) => {
+                if (!err) seededCount++;
+                // Check if this was the last item in the loop
+                if (user === usersToSeed[usersToSeed.length - 1]) {
+                    if (seededCount > 0) {
+                        console.log(`🌱 Seeded ${seededCount} new users into database.`);
+                        console.log("------------------------------------------------");
+                        console.log("AVAILABLE LOGINS (User / Pass):");
+                        console.log("Admin: admin / admin123");
+                        console.log("Teacher: teacher1 / 123");
+                        console.log("Student: rahul / 123");
+                        console.log("------------------------------------------------");
+                    } else {
+                        console.log("ℹ️ Database already contains data. Skipping seed.");
+                    }
+                    stmt.finalize();
+                }
+            });
+        });
+    });
+}
 
 // --- 3. HELPERS ---
 const subjects = {
@@ -191,7 +191,9 @@ app.post('/api/login', (req, res) => {
         if (user) {
             const { password, ...safeUser } = user;
             if (user.subjects) {
-                safeUser.subjects = JSON.parse(user.subjects);
+                try {
+                    safeUser.subjects = JSON.parse(user.subjects);
+                } catch(e) { safeUser.subjects = []; }
             }
             res.json({ success: true, user: safeUser });
         } else {
@@ -284,4 +286,4 @@ app.get('/api/admin/shortage/:course', async (req, res) => {
     });
 });
 
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
