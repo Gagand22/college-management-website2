@@ -2,9 +2,9 @@
   "name": "uniportal-v2",
   "version": "1.0.0",
   "main": "server.js",
-  "scripts": {
+    "scripts": {
     "start": "node server.js",
-    "postinstall": "npm install sqlite3 --build-from-source"
+    "postinstall": "npm install --build-from-source sqlite3"
   },
   "dependencies": {
     "cors": "^2.8.5",
