@@ -9,7 +9,11 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));// Make sure your HTML/CSS is in 'frontend' folder
+app.use(express.static(__dirname)); // Make sure your HTML/CSS is in 'frontend' folder
+// Force serve index.html for the root URL
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // --- 1. DATABASE CONNECTION (SQLite) ---
 const db = new sqlite3.Database('./uniportal.db', (err) => {
