@@ -2,6 +2,7 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,11 +10,31 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname)); // Make sure your HTML/CSS is in 'frontend' folder
-// Force serve index.html for the root URL
+// Serve static files from the current directory (Root) AND 'frontend' folder if it exists
+app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'frontend')));
+
+// --- SMART ROUTE TO FIND INDEX.HTML ---
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    const rootPath = path.join(__dirname, 'index.html');
+    const frontendPath = path.join(__dirname, 'frontend', 'index.html');
+
+    if (fs.existsSync(rootPath)) {
+        console.log("✅ Serving index.html from Root Folder");
+        res.sendFile(rootPath);
+    } else if (fs.existsSync(frontendPath)) {
+        console.log("✅ Serving index.html from 'frontend' Folder");
+        res.sendFile(frontendPath);
+    } else {
+        console.error("❌ CRITICAL ERROR: index.html not found!");
+        console.log("Files in Root:", fs.readdirSync(__dirname));
+        if (fs.existsSync(path.join(__dirname, 'frontend'))) {
+            console.log("Files in Frontend:", fs.readdirSync(path.join(__dirname, 'frontend')));
+        }
+        res.status(500).send("<h1>Server Error</h1><p>Could not find index.html. Check terminal for details.</p>");
+    }
 });
+// ------------------------------------
 
 // --- 1. DATABASE CONNECTION (SQLite) ---
 const db = new sqlite3.Database('./uniportal.db', (err) => {
@@ -73,7 +94,7 @@ db.serialize(() => {
     });
 });
 
-// --- 3. HELPERS (Same logic as original) ---
+// --- 3. HELPERS ---
 const subjects = {
     "BCA": ["Java Programming", "Data Structures", "DBMS", "Computer Networks", "Operating Systems"],
     "BBA": ["Business Studies", "Marketing Mgmt", "HR Management", "Business Law", "Business Ethics"],
@@ -91,7 +112,7 @@ function generateTimetable(courseName) {
                 { time: "02:00 PM - 02:50 PM", subject: subs[0] || "General", room: "Room 101", period: 1 },
                 { time: "02:50 PM - 03:40 PM", subject: subs[1] || "General", room: "Room 102", period: 2 },
                 { time: "03:40 PM - 04:30 PM", subject: subs[2] || "General", room: "Lab A", period: 3 },
-                { time: "04:30 PM - 05:20 PM", subject: subs[3] || "General", room: "Lab B", period: 4 }
+                { time: "04:30 PM - 05:20 PM", subject: subs[3] || "General", room: "Room B", period: 4 }
             ];
         } else {
             schedule[day] = [
@@ -154,7 +175,6 @@ app.post('/api/login', (req, res) => {
         if (err) return res.status(500).json({ success: false, message: "Server Error" });
         if (user) {
             const { password, ...safeUser } = user;
-            // Parse subjects if it's a teacher
             if (user.subjects) {
                 safeUser.subjects = JSON.parse(user.subjects);
             }
@@ -202,7 +222,6 @@ app.get('/api/admin/students/:course', async (req, res) => {
     db.all("SELECT * FROM users WHERE course = ? AND role = 'student' ORDER BY id ASC", [req.params.course], async (err, students) => {
         if (err) return res.status(500).json({ error: err.message });
         
-        // Calculate stats for each student
         const studentsWithStats = await Promise.all(students.map(async (s) => {
             const stats = await calculateAttendance(s.id);
             return { ...s, stats };
@@ -224,10 +243,8 @@ app.post('/api/admin/attendance', (req, res) => {
             const isAbsent = absentIndices.includes(index + 1);
             const status = isAbsent ? 'absent' : 'present';
 
-            // Upsert: Delete existing entry for this exact slot if exists, then insert new one
             db.run("DELETE FROM attendance WHERE studentId = ? AND date = ? AND subject = ? AND period = ?", 
                 [student.id, date, subject, period], () => {
-                    
                 db.run("INSERT INTO attendance (studentId, date, subject, period, status) VALUES (?, ?, ?, ?, ?)", 
                     [student.id, date, subject, period, status]);
             });
